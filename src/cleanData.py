@@ -1,9 +1,15 @@
 # импорт пакетов
 import pandas as pd
 import numpy as np
+import seaborn as sns
 
 import re
 import random
+
+from matplotlib.pyplot import figure
+import matplotlib.pyplot as plt
+import matplotlib.mlab as mlab
+import matplotlib
 
 
 def rangeAverage(df, rangeColName='', targetColName=''):
@@ -42,4 +48,67 @@ def fillSicUseNaics(df, NaicsToSictable=''):
             sample = ', '.join(sample['sic_code'])
             df.loc[row_index, 'sic_codes'] = sample
 
+    return df
+
+
+def printNumericCols(df):
+    # отбор числовых колонок
+    df_numeric = df.select_dtypes(include=[np.number])
+    numeric_cols = df_numeric.columns.values
+    print(numeric_cols)
+
+
+def printNonNumericCols(df):
+    # отбор нечисловых колонок
+    df_non_numeric = df.select_dtypes(exclude=[np.number])
+    non_numeric_cols = df_non_numeric.columns.values
+    print(non_numeric_cols)
+
+
+def initMatplotlib():
+    plt.style.use('ggplot')
+    matplotlib.rcParams['figure.figsize'] = (12, 8)
+    pd.options.mode.chained_assignment = None
+
+
+def HeatmapCreate(df):
+    #Тепловая карта пропущенных значений
+    cols = df.columns[:df.shape[1]]
+    # определяем цвета
+    # желтый - пропущенные данные, синий - не пропущенные
+    colours = ['#000099', '#ffff00']
+    sns.heatmap(df[cols].isnull(), cmap=sns.color_palette(colours))
+
+
+def printPercentLostData(df):
+    for col in df.columns:
+        pct_missing = np.mean(df[col].isnull())
+        print('{} - {}%'.format(col, round(pct_missing * 100)))
+
+
+def dropRow(df, CriticalMiss):
+
+    for col in df.columns:
+        missing = df[col].isnull()
+        num_missing = np.sum(missing)
+
+        if num_missing > 0:
+            print('created missing indicator for: {}'.format(col))
+            df['{}_ismissing'.format(col)] = missing
+
+    # отбрасываем строки с большим количеством пропусков
+    ismissing_cols = [col for col in df.columns if 'ismissing' in col]
+    df['num_missing'] = df[ismissing_cols].sum(axis=1)
+
+    ind_missing = df[df['num_missing'] > CriticalMiss].index
+    df = df.drop(ind_missing, axis=0)
+
+    return df
+
+
+def replacNaMedian(df, cols):
+
+    for col in cols:
+        med = df[col].median()
+        df[col] = df[col].fillna(med)
     return df
