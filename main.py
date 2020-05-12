@@ -10,18 +10,18 @@ import eda as EDA
 
 #   импорт данных из дата сета *.csv
 #dataset = get_DataSet_on_numpy()
-adspends_s1 = np.genfromtxt("data/DataSet/data.csv",
-                            dtype=int,
+adspends_s1 = np.genfromtxt("data/DataSet/CleanData.csv",
+                            dtype='float64',
                             delimiter=";",
                             skip_header=1,
                             usecols=(range(24, 35)))
-naics = np.genfromtxt("data/DataSet/data.csv",
-                      dtype=int,
+naics = np.genfromtxt("data/DataSet/CleanData.csv",
+                      dtype='float64',
                       delimiter=";",
                       skip_header=1,
                       usecols=(5))
-sic = np.genfromtxt("data/DataSet/data.csv",
-                    dtype=int,
+sic = np.genfromtxt("data/DataSet/CleanData.csv",
+                    dtype='float64',
                     delimiter=";",
                     skip_header=1,
                     usecols=(7))
@@ -41,7 +41,6 @@ w2 = []
 for q in X2:
     w2.append(np.asarray(X2[q]).astype('int'))
 w2 = np.asarray(w2)
-
 
 EDA.groupedBar(w1)
 EDA.groupedBar(w2)

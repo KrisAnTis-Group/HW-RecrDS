@@ -42,8 +42,8 @@ CD.printNonNumericCols(df)
 Заметно, например, что признак life_sq имеет довольно много пустых строк, а признак floor – напротив, всего парочку – около 7000 строки.
 """
 
-CD.HeatmapCreate(df)
-plt.show()
+#CD.HeatmapCreate(df)
+#plt.show()
 """
 Процентный список пропущенных данных
 Если в наборе много признаков и визуализация занимает много времени, можно составить список долей отсутствующих записей для каждого признака.
@@ -79,16 +79,50 @@ df = CD.dropRow(df, 10)
 
 #для значений года основания компании можно воспользоваться медианой по остальным значениям в этом столбце
 
-df = CD.replacNaMedian(df, ['year_founded'])
+df = CD.replacNaMedian(df, [
+    'year_founded', 'V_Oct19', 'V_Nov19', 'V_Dec19', 'V_Jan20', 'V_Feb20',
+    'V_Mar20'
+])
 
 df = CD.rangeAverage(df, 'employees_range', 'employees')
 df = CD.rangeAverage(df, 'revenue_range', 'revenue')
 
 df = CD.fillSicUseNaics(df, 'data/DataSet/NAICS-to-SIC.csv')
 
-CD.HeatmapCreate(df)
+CD.HeatmapCreate(df, 20)
 plt.show()
+df.to_csv('data/DataSet/CleanData.csv', index=False, sep=";")
+
+column = [
+    'S2_Apr19', 'S2_May19', 'S2_Jun19', 'S2_Jul19', 'S2_Aug19', 'S2_Sep19',
+    'S2_Oct19', 'S2_Nov19', 'S2_Dec19', 'S2_Jan20', 'S2_Feb20'
+]
+for col in column:
+    kvantl = df[col].describe()['75%']
+    for row_index, row in df[df[col] > df[col].describe()['75%']].iterrows():
+        df.loc[row_index, col] = int(kvantl)
 
 df.to_csv('data/DataSet/CleanData.csv', index=False, sep=";")
+
+df['year_founded'].hist(bins=100)
+plt.show()
+df.boxplot(column=[
+    'S2_Apr19', 'S2_May19', 'S2_Jun19', 'S2_Jul19', 'S2_Aug19', 'S2_Sep19',
+    'S2_Oct19', 'S2_Nov19', 'S2_Dec19', 'S2_Jan20', 'S2_Feb20'
+])
+plt.show()
+num_rows = len(df.index)
+low_information_cols = []  #
+
+for col in df.columns:
+    cnts = df[col].value_counts(dropna=False)
+    top_pct = (cnts / num_rows).iloc[0]
+
+    if top_pct > 0.9:
+        low_information_cols.append(col)
+        print('{0}: {1:.5f}%'.format(col, top_pct * 100))
+        print(cnts)
+        print()
+#df.to_csv('data/DataSet/CleanData.csv', index=False, sep=";")
 
 print()

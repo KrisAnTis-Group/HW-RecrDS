@@ -71,9 +71,13 @@ def initMatplotlib():
     pd.options.mode.chained_assignment = None
 
 
-def HeatmapCreate(df):
+def HeatmapCreate(df, cols=None):
     #Тепловая карта пропущенных значений
-    cols = df.columns[:df.shape[1]]
+
+    if cols is None:
+        cols = df.shape[1]
+
+    cols = df.columns[:cols]
     # определяем цвета
     # желтый - пропущенные данные, синий - не пропущенные
     colours = ['#000099', '#ffff00']
