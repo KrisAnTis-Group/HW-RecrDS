@@ -14,86 +14,117 @@ adspends_s1 = np.genfromtxt("data/DataSet/CleanData.csv",
                             dtype='int',
                             delimiter=";",
                             skip_header=1,
-                            usecols=(range(29, 35)))
+                            usecols=(range(24, 35)))
 
 fiches = np.genfromtxt("data/DataSet/CleanData.csv",
                        delimiter=";",
                        skip_header=1,
                        usecols=(5, 10, 12, 13, 15, 16, 17, 18, 19, 20))
 
-codes = np.genfromtxt("data/DataSet/CleanData.csv",
-                      dtype='str',
-                      delimiter=";",
-                      skip_header=1,
-                      usecols=(8))
-
-ballSic = np.zeros((codes.shape[0], 1))
+SIC_codes = np.genfromtxt("data/DataSet/CleanData.csv",
+                          dtype='str',
+                          delimiter=";",
+                          skip_header=1,
+                          usecols=(8))
 
 sucsSIC_codes = np.genfromtxt("data/DataSet/sucsSIC_codes.csv",
-                              dtype='int',
+                              dtype='str',
                               delimiter=";",
                               skip_header=1)
 
-TOKEN_RE = re.compile(r'[\d]+')
+ballSic = DM.covid19SicCode(SIC_codes, sucsSIC_codes)
 
-for row in range(codes.shape[0]):
-    sicCodes = TOKEN_RE.findall(codes[row])
-    for code in sicCodes:
-        if int(code) in sucsSIC_codes:
-            ballSic[row] += 1
-
-for row in fiches:
-    for sampl in row:
-        if sampl is None:
-            print()
-X = np.column_stack((fiches, ballSic, adspends_s1[:, :-1]))
-
-Y = adspends_s1[:, -1:]
+X = np.column_stack((fiches, ballSic, adspends_s1[:, :-3]))
+Y = adspends_s1[:, -3:]
 
 X = np.asarray(X).astype('float32')
-Y = np.asarray(Y).astype('float32')
+Y = np.asarray(Y).astype('int')
 
-X = DM.normalization(X)
+X, mean, std = DM.normalization(X)
 #Y = DM.normalization(Y)
 
-np.random.seed(2)
+np.random.seed(247)
+"""indices = DM.mixedIndex(X)
+X = X[indices]
+Y = Y[indices]"""
 
 from keras import models
 from keras import layers
-#from keras import regularizers
+from keras import regularizers
 
 model = models.Sequential()
 model.add(layers.Dense(32, activation='relu', input_shape=(X.shape[1], )))
 model.add(layers.Dropout(0.15))
 model.add(layers.Dense(16, activation='relu'))
 model.add(layers.Dropout(0.05))
-model.add(layers.Dense(1))
+model.add(layers.Dense(Y.shape[1]))
 
-model.compile(optimizer='rmsprop', loss='mse', metrics=['mae'])
-
-history = model.fit(X, Y, epochs=1000, batch_size=32, validation_split=0.4)
-
-print(model.evaluate(X, Y))
-
-y_pred = np.array(model.predict(X))
+model.compile(optimizer='adadelta', loss='mse', metrics=['mae'])
+history = model.fit(X, Y, epochs=65, batch_size=32, validation_split=0.4)
+model.evaluate(X, Y)
 
 #model.save_weights('Dense_model.h5')
 
 #графики изменения качества модели
-
 import matplotlib.pyplot as plt
 
 acc = history.history['mae']
 val_acc = history.history['val_mae']
+loss = history.history['loss']
 val_loss = history.history['val_loss']
 
-epochs = range(1, len(acc) + 1)
+epochs = range(10, len(acc) + 1)
 
-plt.plot(epochs, acc, 'bo', label='Training acc')
-plt.plot(epochs, val_acc, 'b', label='Validation acc')
+plt.plot(epochs, acc[9:], 'bo', label='Training acc')
+plt.plot(epochs, val_acc[9:], 'b', label='Validation acc')
 plt.title('Training and validation accuracy')
 plt.legend()
 
 plt.figure()
 
+plt.plot(epochs, loss[9:], 'bo', label='Training loss')
+plt.plot(epochs, val_loss[9:], 'b', label='Validation val_loss')
+plt.title('Training and validation loss')
+plt.legend()
+
 plt.show()
+
+#проверим на данных
+adspends_s1 = np.genfromtxt("data/DataSet/TestData.csv",
+                            dtype='int',
+                            delimiter=";",
+                            skip_header=1,
+                            usecols=(range(24, 35)))
+
+fiches = np.genfromtxt("data/DataSet/TestData.csv",
+                       delimiter=";",
+                       skip_header=1,
+                       usecols=(5, 10, 12, 13, 15, 16, 17, 18, 19, 20))
+
+SIC_codes = np.genfromtxt("data/DataSet/TestData.csv",
+                          dtype='str',
+                          delimiter=";",
+                          skip_header=1,
+                          usecols=(8))
+
+ballSic = DM.covid19SicCode(SIC_codes, sucsSIC_codes)
+
+x_test = np.column_stack((fiches, ballSic, adspends_s1[:, :-3]))
+y_test = adspends_s1[:, -3:]
+
+x_test = np.asarray(x_test).astype('float32')
+y_test = np.asarray(y_test).astype('int')
+
+x_test = DM.normalization(x_test, mean, std)
+y_pred = np.array(model.predict(x_test))
+y_pred = np.column_stack((adspends_s1[:, :-3], y_pred))
+
+for i in range(len(y_test)):
+    plt.plot(adspends_s1[i, :], 'b', color='r', label='test')
+    plt.plot(y_pred[i, :], 'b', label='pred')
+    plt.title(i)
+    plt.legend()
+    plt.show()
+    plt.figure()
+
+#plt.show()

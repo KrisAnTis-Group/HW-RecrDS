@@ -116,3 +116,28 @@ def replacNaMedian(df, cols):
         med = df[col].median()
         df[col] = df[col].fillna(med)
     return df
+
+
+def getTestingData(df, count):
+    #получить данные с положительным и отрицательными трендами по последним трём месяцам
+    q = df[df['S2_Dec19'] > df['S2_Jan20']]
+    q = q[q['S2_Jan20'] > q['S2_Feb20']]
+    q = q[(q['S2_Dec19'] - q['S2_Jan20']) > q['S2_Jan20'].describe()['25%'] *
+          0.1]
+    q = q[(q['S2_Jan20'] - q['S2_Feb20']) > q['S2_Feb20'].describe()['25%'] *
+          0.05]
+    ind = q.index[:count // 2]
+    df = df.drop(ind, axis=0)
+
+    test_row = q
+
+    q = df[df['S2_Dec19'] < df['S2_Jan20']]
+    q = q[q['S2_Jan20'] < q['S2_Feb20']]
+    q = q[(q['S2_Jan20'] - q['S2_Dec19']) > q['S2_Dec19'].describe()['25%'] *
+          0.2]
+    q = q[(q['S2_Feb20'] - q['S2_Jan20']) > q['S2_Jan20'].describe()['25%'] *
+          0.08]
+    ind = q.index[:count - count // 2]
+    df = df.drop(ind, axis=0)
+
+    return pd.concat([test_row, q]), df

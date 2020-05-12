@@ -134,10 +134,17 @@ def to_one_hot(labels, demension=3):
     return results
 
 
-def normalization(Data):
-    mean = Data.mean(axis=0)
+def normalization(Data, mean=None, std=None):
+    if mean is None and std is None:
+
+        mean = Data.mean(axis=0)
+        Data -= mean
+        std = Data.std(axis=0)
+        Data /= std
+
+        return Data, mean, std
+
     Data -= mean
-    std = Data.std(axis=0)
     Data /= std
 
     return Data
@@ -148,3 +155,19 @@ def mixedIndex(range):
     np.random.shuffle(indices)
 
     return indices
+
+
+def covid19SicCode(SIC_codes, sucsSIC_codes):
+    ballSic = np.zeros((SIC_codes.shape[0], 1))
+
+    TOKEN_RE = re.compile(r'[\d]+')
+
+    for row in range(SIC_codes.shape[0]):
+        sicCodes = TOKEN_RE.findall(SIC_codes[row])
+        for code in sicCodes:
+            for s in sucsSIC_codes:
+                if s.find(code) == 0:
+                    ballSic[row] += 1
+            '''if int(code) in sucsSIC_codes:
+                ballSic[row] += 1'''
+    return ballSic

@@ -91,38 +91,28 @@ df = CD.fillSicUseNaics(df, 'data/DataSet/NAICS-to-SIC.csv')
 
 CD.HeatmapCreate(df, 20)
 plt.show()
-df.to_csv('data/DataSet/CleanData.csv', index=False, sep=";")
 
 column = [
     'S2_Apr19', 'S2_May19', 'S2_Jun19', 'S2_Jul19', 'S2_Aug19', 'S2_Sep19',
     'S2_Oct19', 'S2_Nov19', 'S2_Dec19', 'S2_Jan20', 'S2_Feb20'
 ]
+
+df.boxplot(column)
+plt.show()
+
 for col in column:
+    kvantl = df[col].describe()
     kvantl = df[col].describe()['75%']
     for row_index, row in df[df[col] > df[col].describe()['75%']].iterrows():
-        df.loc[row_index, col] = int(kvantl)
+        d10 = df.loc[row_index, col] * 0.06
+        df.loc[row_index, col] = int(int(kvantl) + d10)
+
+df.boxplot(column)
+plt.show()
+
+testData, df = CD.getTestingData(df)
 
 df.to_csv('data/DataSet/CleanData.csv', index=False, sep=";")
-
-df['year_founded'].hist(bins=100)
-plt.show()
-df.boxplot(column=[
-    'S2_Apr19', 'S2_May19', 'S2_Jun19', 'S2_Jul19', 'S2_Aug19', 'S2_Sep19',
-    'S2_Oct19', 'S2_Nov19', 'S2_Dec19', 'S2_Jan20', 'S2_Feb20'
-])
-plt.show()
-num_rows = len(df.index)
-low_information_cols = []  #
-
-for col in df.columns:
-    cnts = df[col].value_counts(dropna=False)
-    top_pct = (cnts / num_rows).iloc[0]
-
-    if top_pct > 0.9:
-        low_information_cols.append(col)
-        print('{0}: {1:.5f}%'.format(col, top_pct * 100))
-        print(cnts)
-        print()
-#df.to_csv('data/DataSet/CleanData.csv', index=False, sep=";")
+testData.to_csv('data/DataSet/TestData.csv', index=False, sep=";")
 
 print()
